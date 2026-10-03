@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import logo from "./assets/logo.png";
 import "./App.css";
 
@@ -14,11 +14,16 @@ function App() {
   const [lang, setLang] = useState("hinglish"); // "hinglish" | "hi" | "en"
 
   const [selectedService, setSelectedService] = useState("");
-  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [serviceSearchQuery, setServiceSearchQuery] = useState("");
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
 
   const [location, setLocation] = useState("Jhansi");
   const [userCoords, setUserCoords] = useState([25.4484, 78.5685]); // Jhansi coords default
   const [addressText, setAddressText] = useState("Elite Chouraha, Jhansi, UP");
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+
+  const [selectedWorker, setSelectedWorker] = useState(null);
   const [radiusKm, setRadiusKm] = useState(5);
 
   const [bookingMessage, setBookingMessage] = useState("");
@@ -30,48 +35,73 @@ function App() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showMapView, setShowMapView] = useState(true);
 
+  const serviceDropdownRef = useRef(null);
+  const locationDropdownRef = useRef(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(e.target)) {
+        setShowServiceDropdown(false);
+      }
+      if (locationDropdownRef.current && !locationDropdownRef.current.contains(e.target)) {
+        setShowLocationDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   /* ================= SERVICES ================= */
 
   const services = [
     {
       icon: "⚡",
       name: "Electrician",
-      description: "Electrical repair and installation.",
+      description: "Wiring, switchboard, fan repair & light fitting",
+      basePrice: 199,
     },
     {
       icon: "🔧",
       name: "Plumber",
-      description: "Water pipe and plumbing services.",
+      description: "Pipe leakage, tap, tank repair & bathroom fittings",
+      basePrice: 249,
     },
     {
       icon: "🪚",
       name: "Carpenter",
-      description: "Furniture and woodwork services.",
+      description: "Door locks, furniture repair, cabinets & woodwork",
+      basePrice: 299,
     },
     {
       icon: "🎨",
       name: "Painter",
-      description: "Professional home painting services.",
+      description: "Wall touch-up, full house painting & waterproofing",
+      basePrice: 399,
     },
     {
       icon: "❄️",
       name: "AC & Appliance",
-      description: "Repair and maintenance services.",
+      description: "AC service, fridge & washing machine repair",
+      basePrice: 349,
     },
     {
       icon: "🧹",
       name: "Cleaning",
-      description: "Professional home cleaning services.",
+      description: "Deep home cleaning, sofa, carpet & bathroom cleaning",
+      basePrice: 299,
     },
     {
       icon: "🧱",
       name: "Mason",
-      description: "Tile fitting, plaster & cement work.",
+      description: "Tile fitting, wall plaster, cement work & renovation",
+      basePrice: 449,
     },
     {
       icon: "🛵",
       name: "Mechanic",
-      description: "Bike/Car puncture & repair services.",
+      description: "Bike/Car breakdown, puncture repair & oil change",
+      basePrice: 199,
     },
   ];
 
@@ -79,43 +109,114 @@ function App() {
 
   const workers = {
     Electrician: [
-      { name: "Ajit yadav", experience: "10 Years", rating: "9.7", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 199, vehicle: "Hero Splendor 🛵", lat: 25.4490, lng: 78.5695, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
-      { name: "Amit Verma", experience: "4 Years", rating: "4.7", location: "kushinagar", phone: "+91 94500 87654", baseRate: 199, vehicle: "Honda Activa 🛵", lat: 25.4380, lng: 78.5620, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
-      { name: "Suresh Yadav", experience: "7 Years", rating: "4.9", location: "gonda", phone: "+91 91255 43210", baseRate: 249, vehicle: "TVS XL100 🛵", lat: 25.4570, lng: 78.5790, photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
+      { name: "Ajit Yadav", experience: "10 Years", rating: "4.9", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 199, vehicle: "Hero Splendor 🛵", lat: 26.7620, lng: 83.3750, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
+      { name: "Amit Verma", experience: "4 Years", rating: "4.7", location: "kushinagar", phone: "+91 94500 87654", baseRate: 199, vehicle: "Honda Activa 🛵", lat: 26.7400, lng: 83.8900, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+      { name: "Suresh Yadav", experience: "7 Years", rating: "4.9", location: "gonda", phone: "+91 91255 43210", baseRate: 249, vehicle: "TVS XL100 🛵", lat: 27.1300, lng: 81.9600, photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
       { name: "Rohit Sharma", experience: "6 Years", rating: "4.8", location: "Lucknow", phone: "+91 94150 99887", baseRate: 199, vehicle: "Honda Shine 🛵", lat: 26.8480, lng: 80.9450, photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80" },
-      { name: "Vivek Kumar", experience: "5 Years", rating: "4.7", location: "gorakhpur", phone: "+91 93050 44332", baseRate: 199, vehicle: "Yamaha FZ 🏍️", lat: 26.8520, lng: 80.9980, photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80" },
+      { name: "Vivek Kumar", experience: "5 Years", rating: "4.7", location: "gorakhpur", phone: "+91 93050 44332", baseRate: 199, vehicle: "Yamaha FZ 🏍️", lat: 26.7550, lng: 83.3650, photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80" },
     ],
 
     Plumber: [
-      { name: "Rakesh Kumar", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 249, vehicle: "Hero Splendor 🛵", lat: 25.4490, lng: 78.5695, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
-      { name: "Vikas Sharma", experience: "3 Years", rating: "4.6", location: "maharajganj", phone: "+91 94500 87654", baseRate: 249, vehicle: "Honda Activa 🛵", lat: 25.4380, lng: 78.5620, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+      { name: "Rakesh Kumar", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 249, vehicle: "Hero Splendor 🛵", lat: 26.7650, lng: 83.3800, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
+      { name: "Vikas Sharma", experience: "3 Years", rating: "4.6", location: "maharajganj", phone: "+91 94500 87654", baseRate: 249, vehicle: "Honda Activa 🛵", lat: 27.1400, lng: 83.5600, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
       { name: "Sanjay Gupta", experience: "7 Years", rating: "4.8", location: "lucknow", phone: "+91 98890 55443", baseRate: 249, vehicle: "Suzuki Access 🛵", lat: 26.8520, lng: 80.9980, photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80" },
     ],
 
     Carpenter: [
-      { name: "Mohan Singh", experience: "8 Years", rating: "4.9", location: "gorakhpur", phone: "+91 97920 11223", baseRate: 299, vehicle: "Bajaj Pulsar 🛵", lat: 25.4610, lng: 78.5510, photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80" },
-      { name: "Deepak Kumar", experience: "5 Years", rating: "4.7", location: "Lucknow", phone: "+91 94500 87654", baseRate: 299, vehicle: "Honda Activa 🛵", lat: 25.4380, lng: 78.5620, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+      { name: "Mohan Singh", experience: "8 Years", rating: "4.9", location: "gorakhpur", phone: "+91 97920 11223", baseRate: 299, vehicle: "Bajaj Pulsar 🛵", lat: 26.7580, lng: 83.3710, photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80" },
+      { name: "Deepak Kumar", experience: "5 Years", rating: "4.7", location: "Lucknow", phone: "+91 94500 87654", baseRate: 299, vehicle: "Honda Activa 🛵", lat: 26.8420, lng: 80.9320, photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
     ],
 
     Painter: [
-      { name: "Arun Kumar", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 399, vehicle: "Hero Splendor 🛵", lat: 25.4490, lng: 78.5695, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
+      { name: "Arun Kumar", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 98381 23456", baseRate: 399, vehicle: "Hero Splendor 🛵", lat: 26.7630, lng: 83.3760, photo: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80" },
       { name: "Aakash Verma", experience: "5 Years", rating: "4.8", location: "Lucknow", phone: "+91 97210 66778", baseRate: 399, vehicle: "Royal Enfield 🏍️", lat: 26.8120, lng: 80.9020, photo: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80" },
     ],
 
     "AC & Appliance": [
-      { name: "Rahul Gupta", experience: "7 Years", rating: "4.9", location: "gorakhpur", phone: "+91 93361 77889", baseRate: 349, vehicle: "TVS Jupiter 🛵", lat: 25.4420, lng: 78.5740, photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" },
+      { name: "Rahul Gupta", experience: "7 Years", rating: "4.9", location: "gorakhpur", phone: "+91 93361 77889", baseRate: 349, vehicle: "TVS Jupiter 🛵", lat: 26.7640, lng: 83.3770, photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" },
       { name: "Karan Singh", experience: "6 Years", rating: "4.8", location: "Lucknow", phone: "+91 93050 44332", baseRate: 349, vehicle: "Yamaha FZ 🏍️", lat: 26.8790, lng: 80.9910, photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80" },
     ],
 
     Cleaning: [
-      { name: "Pooja Kushwaha", experience: "4 Years", rating: "4.8", location: "gorakhpur", phone: "+91 95599 33441", baseRate: 299, vehicle: "Scooty Pep 🛵", lat: 25.4310, lng: 78.5490, photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },
+      { name: "Pooja Kushwaha", experience: "4 Years", rating: "4.8", location: "gorakhpur", phone: "+91 95599 33441", baseRate: 299, vehicle: "Scooty Pep 🛵", lat: 26.7590, lng: 83.3690, photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },
     ],
     Mason: [
-      { name: "Ram Kumar Mistri", experience: "12 Years", rating: "4.9", location: "Lucknow", phone: "+91 97180 33445", baseRate: 499, vehicle: "Hero Passion 🛵", lat: 25.4490, lng: 78.5695, photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80" }
+      { name: "Ram Kumar Mistri", experience: "12 Years", rating: "4.9", location: "Lucknow", phone: "+91 97180 33445", baseRate: 499, vehicle: "Hero Passion 🛵", lat: 26.8450, lng: 80.9400, photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80" }
     ],
     Mechanic: [
-      { name: "Deepak Saini", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 91400 99881", baseRate: 199, vehicle: "Mobile Kit Van 🚙", lat: 25.4380, lng: 78.5620, photo: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150&auto=format&fit=crop&q=80" }
+      { name: "Deepak Saini", experience: "6 Years", rating: "4.8", location: "gorakhpur", phone: "+91 91400 99881", baseRate: 199, vehicle: "Mobile Kit Van 🚙", lat: 26.7610, lng: 83.3720, photo: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150&auto=format&fit=crop&q=80" }
     ]
+  };
+
+  /* ================= ALL WORKERS AGGREGATOR ================= */
+
+  const getAllWorkers = () => {
+    const list = [...MOCK_WORKERS];
+    Object.keys(workers).forEach((srv) => {
+      workers[srv].forEach((w, idx) => {
+        if (!list.some((existing) => existing.name.toLowerCase() === w.name.toLowerCase())) {
+          list.push({
+            id: `w-local-${srv}-${idx}`,
+            name: w.name,
+            phone: w.phone,
+            photo: w.photo,
+            rating: parseFloat(w.rating) || 4.8,
+            reviewCount: 110,
+            experience: w.experience,
+            city: w.location,
+            address: `${w.location.charAt(0).toUpperCase() + w.location.slice(1)}, UP`,
+            lat: w.lat,
+            lng: w.lng,
+            service: srv,
+            baseRate: w.baseRate || 199,
+            hourlyRate: 250,
+            verified: true,
+            vehicle: w.vehicle || "Hero Splendor 🛵",
+            skills: ["General Repair", "Inspection & Fix"],
+            isOnline: true,
+          });
+        }
+      });
+    });
+    return list;
+  };
+
+  /* ================= GPS AUTO-DETECT ================= */
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      setSearchMessage("Geolocation is not supported by your browser.");
+      return;
+    }
+    setIsLocating(true);
+    setSearchMessage("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setUserCoords([latitude, longitude]);
+        setIsLocating(false);
+
+        // Find closest known city
+        let closestCity = CITIES[0];
+        let minDist = Infinity;
+        CITIES.forEach((city) => {
+          const dist = Math.hypot(city.lat - latitude, city.lng - longitude);
+          if (dist < minDist) {
+            minDist = dist;
+            closestCity = city;
+          }
+        });
+
+        setLocation(closestCity.name);
+        setAddressText(`${closestCity.name}, ${closestCity.state} (Live GPS)`);
+        setShowLocationDropdown(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        setSearchMessage("Could not retrieve GPS location. Please pick a city.");
+      },
+      { timeout: 7000 }
+    );
   };
 
   /* ================= NAVIGATION ================= */
@@ -136,13 +237,15 @@ function App() {
 
   const handleSelectService = (serviceName) => {
     setSelectedService(serviceName);
+    setServiceSearchQuery(serviceName);
+    setShowServiceDropdown(false);
     setSelectedWorker(null);
     setBookingMessage("");
     setSearchMessage("");
     setActiveNav("home");
 
     setTimeout(() => {
-      const searchBox = document.querySelector(".search-box");
+      const searchBox = document.getElementById("search-box-root");
       if (searchBox) {
         searchBox.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -155,12 +258,14 @@ function App() {
     const enteredLocation = location.trim();
 
     if (!selectedService) {
-      setSearchMessage("Please select a service first.");
+      setSearchMessage("⚠️ Please select a service first (e.g. Electrician, Plumber).");
+      setShowServiceDropdown(true);
       return;
     }
 
     if (!enteredLocation) {
-      setSearchMessage("Please enter your location.");
+      setSearchMessage("⚠️ Please enter or select your location.");
+      setShowLocationDropdown(true);
       return;
     }
 
@@ -176,6 +281,8 @@ function App() {
     setSelectedWorker(null);
     setBookingMessage("");
     setSearchMessage("");
+    setShowServiceDropdown(false);
+    setShowLocationDropdown(false);
     setPage("workers");
   };
 
@@ -358,32 +465,40 @@ function App() {
   /* ================= WORKERS PAGE (MAP & WORKERS LIST) ================= */
 
   if (page === "workers") {
-    const normalizedLocation = location.trim().toLowerCase();
-
-    const rawList = workers[selectedService] || [];
-    const availableWorkers = rawList.filter(
-      (worker) => worker.location.toLowerCase() === normalizedLocation || normalizedLocation === ""
+    const allWorkersList = getAllWorkers();
+    const serviceWorkers = allWorkersList.filter(
+      (w) => !selectedService || w.service.toLowerCase() === selectedService.toLowerCase()
     );
 
+    const normLoc = location.trim().toLowerCase();
+    const exactCityWorkers = serviceWorkers.filter(
+      (w) =>
+        (w.city && (w.city.toLowerCase().includes(normLoc) || normLoc.includes(w.city.toLowerCase()))) ||
+        (w.address && w.address.toLowerCase().includes(normLoc))
+    );
+
+    const availableWorkers = exactCityWorkers.length > 0 ? exactCityWorkers : serviceWorkers;
+    const isShowingNearby = exactCityWorkers.length === 0 && serviceWorkers.length > 0;
+
     // Adapt workers for LocationPickerMap
-    const mapWorkersList = (availableWorkers.length > 0 ? availableWorkers : rawList).map((w, idx) => ({
-      id: "w-map-" + idx,
+    const mapWorkersList = availableWorkers.map((w, idx) => ({
+      id: w.id || "w-map-" + idx,
       name: w.name,
       phone: w.phone || "+91 98381 23456",
       photo: w.photo || "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80",
       rating: parseFloat(w.rating) || 4.8,
-      reviewCount: 110,
+      reviewCount: w.reviewCount || 110,
       experience: w.experience,
-      city: w.location,
-      address: `${w.location} Area`,
+      city: w.city || w.location,
+      address: w.address || `${w.city || w.location} Area`,
       lat: w.lat || userCoords[0] + (idx * 0.005 - 0.005),
       lng: w.lng || userCoords[1] + (idx * 0.005 - 0.005),
-      service: selectedService,
+      service: w.service || selectedService,
       baseRate: w.baseRate || 199,
-      hourlyRate: 250,
+      hourlyRate: w.hourlyRate || 250,
       verified: true,
       vehicle: w.vehicle || "Hero Splendor 🛵",
-      skills: ["General Service", "Repair & Fitting"],
+      skills: w.skills || ["General Service", "Repair & Fitting"],
     }));
 
     return (
@@ -411,19 +526,86 @@ function App() {
         <section className="workers-page">
           <div className="workers-header">
             <p className="small-title">AVAILABLE PROFESSIONALS</p>
-            <h1>{selectedService} Workers</h1>
-            <p>Professionals available near <strong>{location || "your location"}</strong></p>
+            <h1>{selectedService || "All"} Workers</h1>
+            <p>
+              Showing verified professionals near <strong>{location || "your location"}</strong>
+            </p>
 
-            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "16px" }}>
+            {/* QUICK RESPONSIVE FILTER BAR */}
+            <div className="workers-filter-bar">
+              <div className="workers-filter-group">
+                <span className="filter-label">Service:</span>
+                <select
+                  value={selectedService}
+                  onChange={(e) => setSelectedService(e.target.value)}
+                  className="workers-filter-select"
+                >
+                  {services.map((srv) => (
+                    <option key={srv.name} value={srv.name}>
+                      {srv.icon} {srv.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="workers-filter-group">
+                <span className="filter-label">City:</span>
+                <select
+                  value={CITIES.some((c) => c.name.toLowerCase() === location.toLowerCase()) ? location : "custom"}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val !== "custom") {
+                      const found = CITIES.find((c) => c.name.toLowerCase() === val.toLowerCase());
+                      if (found) {
+                        setLocation(found.name);
+                        setUserCoords([found.lat, found.lng]);
+                        setAddressText(`${found.name}, ${found.state}`);
+                      }
+                    }
+                  }}
+                  className="workers-filter-select"
+                >
+                  {CITIES.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      📍 {c.name}
+                    </option>
+                  ))}
+                  {!CITIES.some((c) => c.name.toLowerCase() === location.toLowerCase()) && (
+                    <option value="custom">📍 {location}</option>
+                  )}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="workers-gps-btn"
+                onClick={handleDetectGPS}
+                title="Detect GPS"
+              >
+                {isLocating ? "..." : "🎯 Use GPS"}
+              </button>
+            </div>
+
+            {/* NEARBY NOTICE IF EXACT LOCALITY WAS FALLEN BACK */}
+            {isShowingNearby && (
+              <div className="nearby-notice-box">
+                📍 Showing top verified <strong>{selectedService}</strong> professionals available nearby for on-demand dispatch to <em>"{location}"</em>.
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "16px", flexWrap: "wrap" }}>
               <button
                 style={{
                   background: showMapView ? "#155eef" : "#f1f5f9",
                   color: showMapView ? "#fff" : "#334155",
                   border: "none",
-                  padding: "8px 16px",
-                  borderRadius: "8px",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
                   fontWeight: "700",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
                 }}
                 onClick={() => setShowMapView(true)}
               >
@@ -434,14 +616,17 @@ function App() {
                   background: !showMapView ? "#155eef" : "#f1f5f9",
                   color: !showMapView ? "#fff" : "#334155",
                   border: "none",
-                  padding: "8px 16px",
-                  borderRadius: "8px",
+                  padding: "10px 18px",
+                  borderRadius: "10px",
                   fontWeight: "700",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
                 }}
                 onClick={() => setShowMapView(false)}
               >
-                📋 List View
+                📋 List View ({availableWorkers.length})
               </button>
             </div>
           </div>
@@ -468,30 +653,38 @@ function App() {
             </div>
           )}
 
-          {/* ORIGINAL WORKERS GRID VIEW */}
+          {/* WORKERS GRID VIEW */}
           {availableWorkers.length > 0 ? (
             <div className="workers-grid">
               {availableWorkers.map((worker) => (
                 <div
                   className={`worker-card ${selectedWorker?.name === worker.name ? "selected-card" : ""}`}
-                  key={worker.name}
+                  key={worker.id || worker.name}
                   onClick={() => setSelectedWorker(worker)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="worker-avatar">
-                    {worker.name.charAt(0)}
+                  <div className="worker-card-header-flex">
+                    <img
+                      src={worker.photo || "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80"}
+                      alt={worker.name}
+                      className="worker-card-avatar-img"
+                    />
+                    <div>
+                      <h2>{worker.name}</h2>
+                      <span className="worker-verified-pill">✓ Verified Pro</span>
+                    </div>
                   </div>
-                  <h2>{worker.name}</h2>
-                  <p className="worker-service">{selectedService}</p>
+
+                  <p className="worker-service">{worker.service || selectedService}</p>
 
                   <div className="worker-info">
                     <p>Experience: <strong>{worker.experience}</strong></p>
-                    <p>Rating: <strong>⭐ {worker.rating}</strong></p>
-                    <p>Location: <strong>{worker.location}</strong></p>
-
+                    <p>Rating: <strong>⭐ {worker.rating}</strong> ({worker.reviewCount || 95} reviews)</p>
+                    <p>City: <strong>📍 {worker.city || worker.location}</strong></p>
                     {worker.vehicle && (
                       <p>Vehicle: <strong>{worker.vehicle}</strong></p>
                     )}
+                    <p>Visiting Charge: <strong style={{ color: "#059669" }}>₹{worker.baseRate}</strong></p>
                   </div>
 
                   <button
@@ -549,6 +742,16 @@ function App() {
   }
 
   /* ================= HOME PAGE (ORIGINAL LOOK & FEEL) ================= */
+
+  const filteredServices = services.filter((s) => {
+    const q = serviceSearchQuery.toLowerCase();
+    return s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q);
+  });
+
+  const filteredCities = CITIES.filter((c) => {
+    const q = location.toLowerCase();
+    return c.name.toLowerCase().includes(q) || c.state.toLowerCase().includes(q);
+  });
 
   return (
     <div className="app">
@@ -638,35 +841,218 @@ function App() {
             Find trusted professionals for your everyday home service needs like Uber & Rapido.
           </p>
 
-          {/* SEARCH BOX */}
+          {/* SEARCH BOX CONTAINER */}
+          <div className="search-box-container" id="search-box-root">
+            <div className="search-box">
+              {/* SERVICE SELECTOR INPUT & DROPDOWN */}
+              <div className="search-input-wrapper service-wrapper" ref={serviceDropdownRef}>
+                <span className="search-icon">⚡</span>
+                <input
+                  type="text"
+                  placeholder="What service do you need?"
+                  value={serviceSearchQuery !== "" ? serviceSearchQuery : selectedService}
+                  onFocus={() => {
+                    setShowServiceDropdown(true);
+                    setShowLocationDropdown(false);
+                  }}
+                  onChange={(e) => {
+                    setServiceSearchQuery(e.target.value);
+                    setShowServiceDropdown(true);
+                    setSearchMessage("");
+                  }}
+                />
+                {(selectedService || serviceSearchQuery) && (
+                  <button
+                    type="button"
+                    className="clear-input-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedService("");
+                      setServiceSearchQuery("");
+                    }}
+                    title="Clear service"
+                  >
+                    ✕
+                  </button>
+                )}
 
-          <div className="search-box">
-            <div className="search-input-wrapper">
-              <span className="search-icon">⌕</span>
-              <input
-                type="text"
-                placeholder="What service do you need?"
-                value={selectedService}
-                readOnly
-              />
+                {/* SERVICE DROPDOWN */}
+                {showServiceDropdown && (
+                  <div className="search-dropdown-menu service-dropdown">
+                    <div className="dropdown-title">Choose or Search a Service</div>
+                    <div className="dropdown-items-list">
+                      {filteredServices.length > 0 ? (
+                        filteredServices.map((srv) => (
+                          <div
+                            key={srv.name}
+                            className={`dropdown-item ${selectedService === srv.name ? "active" : ""}`}
+                            onClick={() => {
+                              setSelectedService(srv.name);
+                              setServiceSearchQuery(srv.name);
+                              setShowServiceDropdown(false);
+                              setSearchMessage("");
+                            }}
+                          >
+                            <span className="dropdown-item-icon">{srv.icon}</span>
+                            <div className="dropdown-item-info">
+                              <div className="dropdown-item-title-row">
+                                <strong>{srv.name}</strong>
+                                <span className="price-pill">From ₹{srv.basePrice}</span>
+                              </div>
+                              <span className="dropdown-item-desc">{srv.description}</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="dropdown-empty">No matching services found</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* LOCATION SELECTOR INPUT & DROPDOWN */}
+              <div className="search-input-wrapper location-wrapper" ref={locationDropdownRef}>
+                <span className="location-icon">📍</span>
+                <input
+                  type="text"
+                  placeholder="Enter your location (e.g. Jhansi, Lucknow)"
+                  value={location}
+                  onFocus={() => {
+                    setShowLocationDropdown(true);
+                    setShowServiceDropdown(false);
+                  }}
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    setShowLocationDropdown(true);
+                    setSearchMessage("");
+                  }}
+                />
+                {location && (
+                  <button
+                    type="button"
+                    className="clear-input-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation("");
+                    }}
+                    title="Clear location"
+                  >
+                    ✕
+                  </button>
+                )}
+
+                {/* GPS QUICK DETECT BUTTON */}
+                <button
+                  type="button"
+                  className={`gps-locate-btn ${isLocating ? "locating" : ""}`}
+                  onClick={handleDetectGPS}
+                  title="Detect my live GPS location"
+                >
+                  {isLocating ? "..." : "🎯 GPS"}
+                </button>
+
+                {/* LOCATION DROPDOWN */}
+                {showLocationDropdown && (
+                  <div className="search-dropdown-menu location-dropdown">
+                    <div
+                      className="dropdown-item gps-option"
+                      onClick={() => {
+                        handleDetectGPS();
+                      }}
+                    >
+                      <span className="dropdown-item-icon">🎯</span>
+                      <div className="dropdown-item-info">
+                        <strong>Use Current Location (GPS)</strong>
+                        <span className="dropdown-item-desc">Auto-detect your precise locality</span>
+                      </div>
+                    </div>
+
+                    <div className="dropdown-divider"></div>
+                    <div className="dropdown-title">Popular Cities & Areas</div>
+
+                    <div className="dropdown-items-list">
+                      {filteredCities.length > 0 ? (
+                        filteredCities.map((city) => (
+                          <div
+                            key={city.name}
+                            className={`dropdown-item ${location.toLowerCase() === city.name.toLowerCase() ? "active" : ""}`}
+                            onClick={() => {
+                              setLocation(city.name);
+                              setUserCoords([city.lat, city.lng]);
+                              setAddressText(`${city.name}, ${city.state}`);
+                              setShowLocationDropdown(false);
+                              setSearchMessage("");
+                            }}
+                          >
+                            <span className="dropdown-item-icon">📍</span>
+                            <div className="dropdown-item-info">
+                              <div className="dropdown-item-title-row">
+                                <strong>{city.name}</strong>
+                                <span className="state-pill">{city.state}</span>
+                              </div>
+                              <span className="dropdown-item-desc">Instant dispatch available</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="dropdown-empty">
+                          Press "Find Service" to search in <em>"{location}"</em>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* FIND SERVICE BUTTON */}
+              <button className="find-btn" onClick={handleFindService}>
+                Find Service <span>⚡ →</span>
+              </button>
             </div>
 
-            <div className="search-input-wrapper">
-              <span className="location-icon">◉</span>
-              <input
-                type="text"
-                placeholder="Enter your location (e.g. Jhansi, Lucknow)"
-                value={location}
-                onChange={(e) => {
-                  setLocation(e.target.value);
-                  setSearchMessage("");
-                }}
-              />
+            {/* QUICK SERVICE PILLS */}
+            <div className="quick-tags-container">
+              <span className="quick-tags-label">Popular Services:</span>
+              <div className="quick-tags-scroll">
+                {services.map((srv) => (
+                  <button
+                    key={srv.name}
+                    type="button"
+                    className={`quick-tag-chip ${selectedService === srv.name ? "active" : ""}`}
+                    onClick={() => {
+                      setSelectedService(srv.name);
+                      setServiceSearchQuery(srv.name);
+                      setSearchMessage("");
+                    }}
+                  >
+                    <span>{srv.icon}</span> {srv.name}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <button className="find-btn" onClick={handleFindService}>
-              Find Service <span>→</span>
-            </button>
+            {/* QUICK CITY PILLS */}
+            <div className="quick-tags-container city-tags">
+              <span className="quick-tags-label">Popular Cities:</span>
+              <div className="quick-tags-scroll">
+                {CITIES.slice(0, 7).map((city) => (
+                  <button
+                    key={city.name}
+                    type="button"
+                    className={`quick-tag-chip city-chip ${location.toLowerCase() === city.name.toLowerCase() ? "active" : ""}`}
+                    onClick={() => {
+                      setLocation(city.name);
+                      setUserCoords([city.lat, city.lng]);
+                      setAddressText(`${city.name}, ${city.state}`);
+                      setSearchMessage("");
+                    }}
+                  >
+                    📍 {city.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {selectedService && (
