@@ -8,10 +8,228 @@ import WorkerPartnerDashboard from "./components/WorkerPartnerDashboard";
 import BookingHistoryModal from "./components/BookingHistoryModal";
 import { CITIES, MOCK_WORKERS } from "./data/mockWorkers";
 
+const DEFAULT_USERS = [
+  {
+    id: "usr-demo-cust",
+    name: "Rahul Verma",
+    phone: "9876543210",
+    email: "customer@kaamconnect.com",
+    password: "123456",
+    location: "Jhansi",
+    userType: "customer",
+  },
+  {
+    id: "usr-demo-wrk",
+    name: "Ajit Yadav",
+    phone: "9838123456",
+    email: "worker@kaamconnect.com",
+    password: "123456",
+    location: "Gorakhpur",
+    service: "Electrician",
+    experience: "10 Years",
+    vehicle: "Hero Splendor 🛵",
+    rating: "4.9",
+    userType: "worker",
+  },
+];
+
+const getStoredUsers = () => {
+  try {
+    const raw = localStorage.getItem("kc_users");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  localStorage.setItem("kc_users", JSON.stringify(DEFAULT_USERS));
+  return DEFAULT_USERS;
+};
+
 function App() {
   const [page, setPage] = useState("home"); // "home" | "login" | "register" | "workers" | "partner"
-  const [userType, setUserType] = useState("customer");
   const [lang, setLang] = useState("hinglish"); // "hinglish" | "hi" | "en"
+
+  // AUTH STATE
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("kc_current_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Login form state
+  const [loginInput, setLoginInput] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginUserType, setLoginUserType] = useState("customer");
+  const [loginError, setLoginError] = useState("");
+  const [loginSuccess, setLoginSuccess] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Register form state
+  const [regName, setRegName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regLocation, setRegLocation] = useState("");
+  const [regService, setRegService] = useState("");
+  const [regExperience, setRegExperience] = useState("");
+  const [regVehicle, setRegVehicle] = useState("");
+  const [regUserType, setRegUserType] = useState("customer");
+  const [regError, setRegError] = useState("");
+  const [regSuccess, setRegSuccess] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
+  const saveCurrentUser = (user) => {
+    setCurrentUser(user);
+    if (user) {
+      localStorage.setItem("kc_current_user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("kc_current_user");
+    }
+  };
+
+  const handleLogout = () => {
+    saveCurrentUser(null);
+    setBookingMessage("");
+    setPage("home");
+  };
+
+  const handleDemoLogin = (type) => {
+    setLoginError("");
+    const stored = getStoredUsers();
+    let demoUser = stored.find((u) => u.userType === type);
+    if (!demoUser) {
+      demoUser = DEFAULT_USERS.find((u) => u.userType === type);
+    }
+    if (demoUser) {
+      setLoginInput(demoUser.email);
+      setLoginPassword(demoUser.password);
+      setLoginUserType(type);
+      saveCurrentUser(demoUser);
+      setLoginSuccess(`Logged in as ${demoUser.name} (${type === "worker" ? "Service Pro" : "Customer"})!`);
+      setTimeout(() => {
+        setLoginSuccess("");
+        if (type === "worker") {
+          setPage("partner");
+        } else {
+          setPage("home");
+        }
+      }, 500);
+    }
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setLoginError("");
+
+    const input = loginInput.trim().toLowerCase();
+    const pass = loginPassword.trim();
+
+    if (!input || !pass) {
+      setLoginError("Please enter both email/phone and password.");
+      return;
+    }
+
+    const stored = getStoredUsers();
+    const found = stored.find(
+      (u) =>
+        (u.email.toLowerCase() === input || u.phone.toLowerCase() === input) &&
+        u.password === pass
+    );
+
+    if (found) {
+      saveCurrentUser(found);
+      setLoginSuccess(`Welcome back, ${found.name}!`);
+      setTimeout(() => {
+        setLoginSuccess("");
+        if (found.userType === "worker") {
+          setPage("partner");
+        } else {
+          setPage("home");
+        }
+      }, 600);
+    } else {
+      setLoginError("Invalid email/phone or password. Try demo login or create a new account.");
+    }
+  };
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    setRegError("");
+
+    if (!regName.trim() || regName.trim().length < 2) {
+      setRegError("Please enter your full name (at least 2 letters).");
+      return;
+    }
+    if (!regPhone.trim() || regPhone.trim().replace(/\D/g, "").length < 10) {
+      setRegError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!regEmail.trim() || !regEmail.includes("@")) {
+      setRegError("Please enter a valid email address.");
+      return;
+    }
+    if (!regPassword.trim() || regPassword.trim().length < 4) {
+      setRegError("Password must be at least 4 characters.");
+      return;
+    }
+    if (regUserType === "worker" && !regService) {
+      setRegError("Please select the service category you specialize in.");
+      return;
+    }
+    if (!regLocation.trim()) {
+      setRegError("Please enter your operating city or location.");
+      return;
+    }
+
+    const stored = getStoredUsers();
+    const cleanEmail = regEmail.trim().toLowerCase();
+    const cleanPhone = regPhone.trim();
+
+    if (stored.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      setRegError("An account with this email address already exists. Please login.");
+      return;
+    }
+
+    const newUser = {
+      id: "usr-" + Date.now(),
+      name: regName.trim(),
+      phone: cleanPhone,
+      email: cleanEmail,
+      password: regPassword.trim(),
+      location: regLocation.trim(),
+      userType: regUserType,
+      service: regUserType === "worker" ? regService : undefined,
+      experience: regUserType === "worker" ? `${regExperience || 1} Years` : undefined,
+      vehicle: regUserType === "worker" ? (regVehicle.trim() || "Hero Splendor 🛵") : undefined,
+      rating: "5.0",
+      reviewCount: 1,
+      registeredAt: new Date().toISOString(),
+    };
+
+    const updated = [newUser, ...stored];
+    localStorage.setItem("kc_users", JSON.stringify(updated));
+    saveCurrentUser(newUser);
+
+    // If matching city, center coords
+    const foundCity = CITIES.find((c) => c.name.toLowerCase() === regLocation.trim().toLowerCase());
+    if (foundCity) {
+      setUserCoords([foundCity.lat, foundCity.lng]);
+      setLocation(foundCity.name);
+    }
+
+    setRegSuccess("Account created successfully! Welcome to Kaam Connect+.");
+    setTimeout(() => {
+      setRegSuccess("");
+      if (regUserType === "worker") {
+        setPage("partner");
+      } else {
+        setPage("home");
+      }
+    }, 700);
+  };
 
   const [selectedService, setSelectedService] = useState("");
   const [serviceSearchQuery, setServiceSearchQuery] = useState("");
@@ -152,6 +370,43 @@ function App() {
 
   const getAllWorkers = () => {
     const list = [...MOCK_WORKERS];
+
+    // Include registered workers from localStorage
+    const stored = getStoredUsers();
+    stored
+      .filter((u) => u.userType === "worker")
+      .forEach((w, idx) => {
+        if (
+          !list.some(
+            (existing) =>
+              (w.email && existing.email === w.email) ||
+              existing.name.toLowerCase() === w.name.toLowerCase()
+          )
+        ) {
+          list.push({
+            id: w.id || `w-reg-${idx}`,
+            name: w.name,
+            phone: w.phone || "+91 98381 23456",
+            photo:
+              "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=150&auto=format&fit=crop&q=80",
+            rating: parseFloat(w.rating) || 5.0,
+            reviewCount: 1,
+            experience: w.experience || "3 Years",
+            city: w.location,
+            address: `${w.location}, UP`,
+            lat: userCoords[0] + (idx * 0.004 + 0.002),
+            lng: userCoords[1] + (idx * 0.004 + 0.002),
+            service: w.service || "Electrician",
+            baseRate: 199,
+            hourlyRate: 250,
+            verified: true,
+            vehicle: w.vehicle || "Hero Splendor 🛵",
+            skills: ["Verified Pro", "On-Demand Service"],
+            isOnline: true,
+          });
+        }
+      });
+
     Object.keys(workers).forEach((srv) => {
       workers[srv].forEach((w, idx) => {
         if (!list.some((existing) => existing.name.toLowerCase() === w.name.toLowerCase())) {
@@ -335,32 +590,119 @@ function App() {
     return (
       <div className="auth-page">
         <div className="auth-card">
-          <div className="auth-logo">
+          <div className="auth-logo" style={{ cursor: "pointer" }} onClick={() => goHome("home")}>
             <img src={logo} alt="KAAM CONNECT+" />
           </div>
 
           <h1>Welcome Back!</h1>
-          <p className="auth-subtitle">Login to continue to KAAM CONNECT+</p>
+          <p className="auth-subtitle">Login to your KAAM CONNECT+ account</p>
 
+          {/* ALERTS */}
+          {loginError && <div className="auth-error-banner">{loginError}</div>}
+          {loginSuccess && <div className="auth-success-banner">{loginSuccess}</div>}
+
+          {/* ROLE TABS */}
           <div className="user-type">
-            <button className={userType === "customer" ? "active" : ""} onClick={() => setUserType("customer")}>
-              Customer
+            <button
+              type="button"
+              className={loginUserType === "customer" ? "active" : ""}
+              onClick={() => {
+                setLoginUserType("customer");
+                setLoginError("");
+              }}
+            >
+              🧑‍💼 Customer
             </button>
-            <button className={userType === "worker" ? "active" : ""} onClick={() => setUserType("worker")}>
-              Service Professional
+            <button
+              type="button"
+              className={loginUserType === "worker" ? "active" : ""}
+              onClick={() => {
+                setLoginUserType("worker");
+                setLoginError("");
+              }}
+            >
+              🧰 Service Pro
             </button>
           </div>
 
-          <input className="auth-input" type="email" placeholder="Email Address" />
-          <input className="auth-input" type="password" placeholder="Password" />
+          <form onSubmit={handleLoginSubmit} className="auth-form">
+            <div className="auth-input-group">
+              <span className="auth-group-icon">✉️</span>
+              <input
+                className="auth-input"
+                type="text"
+                placeholder="Email address or 10-digit mobile"
+                value={loginInput}
+                onChange={(e) => {
+                  setLoginInput(e.target.value);
+                  setLoginError("");
+                }}
+                required
+              />
+            </div>
 
-          <button className="auth-main-btn" onClick={() => goHome("home")}>
-            Login
-          </button>
+            <div className="auth-input-group">
+              <span className="auth-group-icon">🔒</span>
+              <input
+                className="auth-input"
+                type={showLoginPassword ? "text" : "password"}
+                placeholder="Enter password"
+                value={loginPassword}
+                onChange={(e) => {
+                  setLoginPassword(e.target.value);
+                  setLoginError("");
+                }}
+                required
+              />
+              <button
+                type="button"
+                className="password-eye-btn"
+                onClick={() => setShowLoginPassword(!showLoginPassword)}
+                tabIndex="-1"
+                title={showLoginPassword ? "Hide password" : "Show password"}
+              >
+                {showLoginPassword ? "👁️" : "👁️‍🗨️"}
+              </button>
+            </div>
+
+            <button type="submit" className="auth-main-btn">
+              Login as {loginUserType === "customer" ? "Customer" : "Service Pro"} ⚡
+            </button>
+          </form>
+
+          {/* ONE-CLICK DEMO LOGIN HELPER */}
+          <div className="demo-credentials-box">
+            <p className="demo-title">⚡ One-Click Instant Demo Login:</p>
+            <div className="demo-buttons-group">
+              <button
+                type="button"
+                className="demo-pill-btn customer-demo"
+                onClick={() => handleDemoLogin("customer")}
+              >
+                🧑‍💼 Demo Customer (Rahul Verma)
+              </button>
+              <button
+                type="button"
+                className="demo-pill-btn worker-demo"
+                onClick={() => handleDemoLogin("worker")}
+              >
+                🧰 Demo Worker (Ajit Yadav - Electrician)
+              </button>
+            </div>
+          </div>
 
           <p className="auth-switch">
             Don't have an account?{" "}
-            <button onClick={() => setPage("register")}>Create Account</button>
+            <button
+              type="button"
+              onClick={() => {
+                setPage("register");
+                setLoginError("");
+                setRegError("");
+              }}
+            >
+              Create Account
+            </button>
           </p>
 
           <button className="back-home" onClick={() => goHome("home")}>
@@ -377,50 +719,195 @@ function App() {
     return (
       <div className="auth-page">
         <div className="register-card">
-          <div className="auth-logo">
+          <div className="auth-logo" style={{ cursor: "pointer" }} onClick={() => goHome("home")}>
             <img src={logo} alt="KAAM CONNECT+" />
           </div>
 
           <h1>Create Account</h1>
-          <p className="auth-subtitle">Join KAAM CONNECT+</p>
+          <p className="auth-subtitle">Join the KAAM CONNECT+ community</p>
 
+          {/* ALERTS */}
+          {regError && <div className="auth-error-banner">{regError}</div>}
+          {regSuccess && <div className="auth-success-banner">{regSuccess}</div>}
+
+          {/* ROLE TABS */}
           <div className="user-type">
-            <button className={userType === "customer" ? "active" : ""} onClick={() => setUserType("customer")}>
-              Customer
+            <button
+              type="button"
+              className={regUserType === "customer" ? "active" : ""}
+              onClick={() => {
+                setRegUserType("customer");
+                setRegError("");
+              }}
+            >
+              🧑‍💼 Customer
             </button>
-            <button className={userType === "worker" ? "active" : ""} onClick={() => setUserType("worker")}>
-              Service Professional
+            <button
+              type="button"
+              className={regUserType === "worker" ? "active" : ""}
+              onClick={() => {
+                setRegUserType("worker");
+                setRegError("");
+              }}
+            >
+              🧰 Service Pro
             </button>
           </div>
 
-          <input className="auth-input" type="text" placeholder="Full Name" />
-          <input className="auth-input" type="tel" placeholder="Mobile Number" />
-          <input className="auth-input" type="email" placeholder="Email Address" />
-          <input className="auth-input" type="password" placeholder="Create Password" />
+          <form onSubmit={handleRegisterSubmit} className="auth-form">
+            <div className="auth-input-group">
+              <span className="auth-group-icon">👤</span>
+              <input
+                className="auth-input"
+                type="text"
+                placeholder="Full Name (e.g. Ramesh Kumar)"
+                value={regName}
+                onChange={(e) => {
+                  setRegName(e.target.value);
+                  setRegError("");
+                }}
+                required
+              />
+            </div>
 
-          {userType === "worker" && (
-            <>
-              <select className="auth-input">
-                <option value="">Select Your Service</option>
-                {services.map((service) => (
-                  <option key={service.name} value={service.name}>
-                    {service.name}
-                  </option>
-                ))}
-              </select>
-              <input className="auth-input" type="number" placeholder="Years of Experience" />
-            </>
-          )}
+            <div className="auth-input-group">
+              <span className="auth-group-icon">📱</span>
+              <input
+                className="auth-input"
+                type="tel"
+                placeholder="Mobile Number (10 digits)"
+                value={regPhone}
+                onChange={(e) => {
+                  setRegPhone(e.target.value);
+                  setRegError("");
+                }}
+                required
+              />
+            </div>
 
-          <input className="auth-input" type="text" placeholder="Your Location" />
+            <div className="auth-input-group">
+              <span className="auth-group-icon">✉️</span>
+              <input
+                className="auth-input"
+                type="email"
+                placeholder="Email Address"
+                value={regEmail}
+                onChange={(e) => {
+                  setRegEmail(e.target.value);
+                  setRegError("");
+                }}
+                required
+              />
+            </div>
 
-          <button className="auth-main-btn" onClick={() => goHome("home")}>
-            Create Account
-          </button>
+            <div className="auth-input-group">
+              <span className="auth-group-icon">🔒</span>
+              <input
+                className="auth-input"
+                type={showRegPassword ? "text" : "password"}
+                placeholder="Create Password (min. 4 characters)"
+                value={regPassword}
+                onChange={(e) => {
+                  setRegPassword(e.target.value);
+                  setRegError("");
+                }}
+                required
+              />
+              <button
+                type="button"
+                className="password-eye-btn"
+                onClick={() => setShowRegPassword(!showRegPassword)}
+                tabIndex="-1"
+                title={showRegPassword ? "Hide password" : "Show password"}
+              >
+                {showRegPassword ? "👁️" : "👁️‍🗨️"}
+              </button>
+            </div>
+
+            {regUserType === "worker" && (
+              <div className="worker-specific-fields">
+                <div className="auth-input-group">
+                  <span className="auth-group-icon">⚡</span>
+                  <select
+                    className="auth-input auth-select"
+                    value={regService}
+                    onChange={(e) => {
+                      setRegService(e.target.value);
+                      setRegError("");
+                    }}
+                    required
+                  >
+                    <option value="">Select Your Service Skill</option>
+                    {services.map((srv) => (
+                      <option key={srv.name} value={srv.name}>
+                        {srv.icon} {srv.name} (Starts at ₹{srv.basePrice})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="auth-input-group">
+                  <span className="auth-group-icon">⭐</span>
+                  <input
+                    className="auth-input"
+                    type="number"
+                    placeholder="Years of Experience (e.g. 5)"
+                    value={regExperience}
+                    min="0"
+                    max="50"
+                    onChange={(e) => {
+                      setRegExperience(e.target.value);
+                      setRegError("");
+                    }}
+                    required
+                  />
+                </div>
+
+                <div className="auth-input-group">
+                  <span className="auth-group-icon">🛵</span>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    placeholder="Vehicle (e.g. Hero Splendor 🛵, Honda Activa 🛵)"
+                    value={regVehicle}
+                    onChange={(e) => setRegVehicle(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="auth-input-group">
+              <span className="auth-group-icon">📍</span>
+              <input
+                className="auth-input"
+                type="text"
+                placeholder="Your City / Location (e.g. Jhansi, Lucknow, Gorakhpur)"
+                value={regLocation}
+                onChange={(e) => {
+                  setRegLocation(e.target.value);
+                  setRegError("");
+                }}
+                required
+              />
+            </div>
+
+            <button type="submit" className="auth-main-btn">
+              Create {regUserType === "customer" ? "Customer" : "Service Pro"} Account 🚀
+            </button>
+          </form>
 
           <p className="auth-switch">
             Already have an account?{" "}
-            <button onClick={() => setPage("login")}>Login</button>
+            <button
+              type="button"
+              onClick={() => {
+                setPage("login");
+                setLoginError("");
+                setRegError("");
+              }}
+            >
+              Login
+            </button>
           </p>
 
           <button className="back-home" onClick={() => goHome("home")}>
@@ -449,6 +936,17 @@ function App() {
           </div>
 
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {currentUser && (
+              <div className="user-nav-badge">
+                <span className="user-nav-avatar">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+                </span>
+                <span className="user-nav-name">{currentUser.name}</span>
+                <button className="logout-nav-btn" onClick={handleLogout} title="Logout">
+                  Logout
+                </button>
+              </div>
+            )}
             <button className="login-btn" onClick={() => setPage("home")}>
               🧑‍💼 Customer Mode
             </button>
@@ -517,9 +1015,37 @@ function App() {
             <a href="#about" onClick={(e) => { e.preventDefault(); goHome("about"); }}>About</a>
           </div>
 
-          <button className="login-btn" onClick={() => setPage("login")}>
-            <span>♙</span> Login
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            {currentUser ? (
+              <div className="user-nav-badge">
+                <span className="user-nav-avatar">
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+                </span>
+                <div className="user-nav-text">
+                  <span className="user-nav-name">{currentUser.name}</span>
+                  <span className="user-nav-role">
+                    {currentUser.userType === "worker" ? "⚡ Worker Pro" : "Customer"}
+                  </span>
+                </div>
+                {currentUser.userType === "worker" && (
+                  <button
+                    className="login-btn"
+                    style={{ background: "#f59e0b", fontSize: "13px", padding: "6px 12px" }}
+                    onClick={() => setPage("partner")}
+                  >
+                    🧰 Dashboard
+                  </button>
+                )}
+                <button className="logout-nav-btn" onClick={handleLogout} title="Logout">
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button className="login-btn" onClick={() => setPage("login")}>
+                <span>♙</span> Login
+              </button>
+            )}
+          </div>
         </nav>
 
         {/* WORKERS VIEW */}
@@ -810,18 +1336,51 @@ function App() {
         </div>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button
-            className="login-btn"
-            style={{ background: "#f59e0b", fontSize: "14px" }}
-            onClick={() => setPage("partner")}
-            title="Switch to Kaamdar Worker App"
-          >
-            🧰 Worker Partner Mode
-          </button>
+          {currentUser ? (
+            <div className="user-nav-badge">
+              <span className="user-nav-avatar">
+                {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+              </span>
+              <div className="user-nav-text">
+                <span className="user-nav-name">{currentUser.name}</span>
+                <span className="user-nav-role">
+                  {currentUser.userType === "worker" ? "⚡ Pro Partner" : "Customer"}
+                </span>
+              </div>
+              {currentUser.userType === "worker" && (
+                <button
+                  className="login-btn"
+                  style={{ background: "#f59e0b", fontSize: "13px", padding: "6px 12px" }}
+                  onClick={() => setPage("partner")}
+                  title="Worker Partner App"
+                >
+                  🧰 Dashboard
+                </button>
+              )}
+              <button
+                className="logout-nav-btn"
+                onClick={handleLogout}
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                className="login-btn"
+                style={{ background: "#f59e0b", fontSize: "14px" }}
+                onClick={() => setPage("partner")}
+                title="Switch to Kaamdar Worker App"
+              >
+                🧰 Worker Partner Mode
+              </button>
 
-          <button className="login-btn" onClick={() => setPage("login")}>
-            <span>♙</span> Login
-          </button>
+              <button className="login-btn" onClick={() => setPage("login")}>
+                <span>♙</span> Login
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
