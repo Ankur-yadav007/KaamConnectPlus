@@ -954,7 +954,12 @@ function App() {
         </nav>
 
         <div style={{ maxWidth: "1100px", margin: "30px auto", padding: "0 20px" }}>
-          <WorkerPartnerDashboard lang={lang} currentCity={CITIES.find(c => c.name.toLowerCase() === location.toLowerCase()) || CITIES[0]} />
+          <WorkerPartnerDashboard
+            currentUser={currentUser}
+            lang={lang}
+            currentCity={CITIES.find(c => c.name.toLowerCase() === location.toLowerCase()) || CITIES[0]}
+            onUpdateCurrentUser={(updated) => saveCurrentUser(updated)}
+          />
         </div>
       </div>
     );
