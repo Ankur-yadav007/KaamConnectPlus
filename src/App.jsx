@@ -249,6 +249,7 @@ function App() {
   const [activeNav, setActiveNav] = useState("home");
 
   const [activeBooking, setActiveBooking] = useState(null);
+  const [selectedPartnerWorker, setSelectedPartnerWorker] = useState(null);
   const [bookingHistory, setBookingHistory] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showMapView, setShowMapView] = useState(true);
@@ -956,9 +957,13 @@ function App() {
         <div style={{ maxWidth: "1100px", margin: "30px auto", padding: "0 20px" }}>
           <WorkerPartnerDashboard
             currentUser={currentUser}
+            partnerWorker={selectedPartnerWorker}
+            allWorkers={getAllWorkers()}
             lang={lang}
             currentCity={CITIES.find(c => c.name.toLowerCase() === location.toLowerCase()) || CITIES[0]}
             onUpdateCurrentUser={(updated) => saveCurrentUser(updated)}
+            onSelectPartnerWorker={(worker) => setSelectedPartnerWorker(worker)}
+            onSwitchToCustomer={() => setPage("home")}
           />
         </div>
       </div>
@@ -1265,7 +1270,13 @@ function App() {
             booking={activeBooking}
             onCancelBooking={() => setActiveBooking(null)}
             onCompleteBooking={handleCompleteBooking}
+            onViewWorkerDashboard={(worker) => {
+              setSelectedPartnerWorker(worker);
+              setActiveBooking(null);
+              setPage("partner");
+            }}
             lang={lang}
+            currentUser={currentUser}
           />
         )}
       </div>
@@ -1722,7 +1733,13 @@ function App() {
           booking={activeBooking}
           onCancelBooking={() => setActiveBooking(null)}
           onCompleteBooking={handleCompleteBooking}
+          onViewWorkerDashboard={(worker) => {
+            setSelectedPartnerWorker(worker);
+            setActiveBooking(null);
+            setPage("partner");
+          }}
           lang={lang}
+          currentUser={currentUser}
         />
       )}
     </div>
