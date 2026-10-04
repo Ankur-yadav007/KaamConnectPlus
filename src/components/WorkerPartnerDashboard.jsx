@@ -699,82 +699,92 @@ export default function WorkerPartnerDashboard({
                   </p>
                 </div>
 
-                {/* STAGE 1: WORKER ARRIVED - ENTER START OTP */}
+                {/* STAGE 1: WORKER ARRIVED - TAKE START OTP FROM CUSTOMER */}
                 {activeJob.stage === "ARRIVED_PENDING_START_OTP" && (
                   <div
                     style={{
                       background: "#f0fdf4",
                       border: "2px solid #10b981",
-                      borderRadius: "12px",
-                      padding: "16px",
+                      borderRadius: "14px",
+                      padding: "18px",
                       margin: "14px 0",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                      <MapPin size={18} className="text-emerald-600" />
-                      <strong style={{ color: "#065f46", fontSize: "15px" }}>
-                        You have arrived at work location!
+                      <MapPin size={20} className="text-emerald-600" />
+                      <strong style={{ color: "#065f46", fontSize: "16px" }}>
+                        You have arrived at Customer's Location!
                       </strong>
                     </div>
-                    <p style={{ margin: "0 0 10px 0", fontSize: "13px", color: "#047857" }}>
-                      Ask customer for the <strong>Start OTP</strong> to verify arrival and begin working.
-                      (Simulated Customer OTP: <strong style={{ color: "#059669" }}>{activeJob.startOtp}</strong>)
-                    </p>
 
-                    <form
-                      onSubmit={handlePartnerVerifyStartOTP}
-                      style={{ display: "flex", gap: "10px", alignItems: "center" }}
+                    {/* Customer Speech Bubble giving Start OTP */}
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid #a7f3d0",
+                        borderRadius: "10px",
+                        padding: "10px 14px",
+                        margin: "10px 0 14px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        boxShadow: "0 2px 6px rgba(16, 185, 129, 0.08)",
+                      }}
                     >
-                      <input
-                        type="text"
-                        placeholder="Enter Start OTP"
-                        maxLength={4}
-                        value={startOtpInput}
-                        onChange={(e) => setStartOtpInput(e.target.value)}
+                      <div
                         style={{
-                          width: "140px",
-                          padding: "8px",
-                          textAlign: "center",
-                          fontSize: "18px",
-                          fontWeight: 700,
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setStartOtpInput(activeJob.startOtp)}
-                        style={{
-                          background: "#e2e8f0",
-                          border: "none",
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Auto-fill OTP
-                      </button>
-                      <button
-                        type="submit"
-                        style={{
-                          background: "#10b981",
+                          background: "#3b82f6",
                           color: "#fff",
-                          border: "none",
-                          padding: "9px 16px",
-                          borderRadius: "8px",
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           fontWeight: 700,
-                          cursor: "pointer",
+                          fontSize: "14px",
+                          shrink: 0,
                         }}
                       >
-                        Verify & Start Work ⚡
-                      </button>
-                    </form>
-                    {startOtpError && (
-                      <p style={{ color: "#dc2626", fontSize: "12px", margin: "6px 0 0 0" }}>
-                        {startOtpError}
-                      </p>
-                    )}
+                        {activeJob.customerName.charAt(0)}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: "13px", color: "#1e293b" }}>{activeJob.customerName} (Customer):</strong>
+                        <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#047857" }}>
+                          "Namaste bhaiya! Mera Start-Work OTP hai <strong style={{ fontSize: "16px", color: "#059669", letterSpacing: "2px" }}>{activeJob.startOtp}</strong>"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PRIMARY BUTTON: WORKER TAKES OTP FROM CUSTOMER */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStartOtpInput(activeJob.startOtp);
+                        setTimeout(() => {
+                          setActiveJob((prev) => ({ ...prev, stage: "WORKING" }));
+                          setStartOtpError("");
+                        }, 400);
+                      }}
+                      style={{
+                        width: "100%",
+                        background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                        color: "#fff",
+                        border: "none",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        fontWeight: 800,
+                        fontSize: "15px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        boxShadow: "0 4px 14px rgba(16, 185, 129, 0.3)",
+                      }}
+                    >
+                      <ShieldCheck size={20} /> 🤝 Take Start OTP ({activeJob.startOtp}) from Customer & Start Work ⚡
+                    </button>
                   </div>
                 )}
 
@@ -818,83 +828,92 @@ export default function WorkerPartnerDashboard({
                   </div>
                 )}
 
-                {/* STAGE 3: WORK FINISHED - ENTER END OTP */}
+                {/* STAGE 3: WORK FINISHED - TAKE END OTP FROM CUSTOMER */}
                 {activeJob.stage === "COMPLETED_PENDING_END_OTP" && (
                   <div
                     style={{
                       background: "#f0fdf4",
                       border: "2px solid #16a34a",
-                      borderRadius: "12px",
-                      padding: "16px",
+                      borderRadius: "14px",
+                      padding: "18px",
                       margin: "14px 0",
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                      <CheckCircle2 size={18} className="text-green-600" />
-                      <strong style={{ color: "#166534", fontSize: "15px" }}>
-                        Message sent to customer! Please verify End OTP
+                      <CheckCircle2 size={20} className="text-green-600" />
+                      <strong style={{ color: "#166534", fontSize: "16px" }}>
+                        Work Finished! Message sent to {activeJob.customerName}
                       </strong>
                     </div>
-                    <p style={{ margin: "0 0 10px 0", fontSize: "13px", color: "#15803d" }}>
-                      Customer was sent: <em>"Namaste! Work completed. Please share Completion OTP."</em>
-                      <br />
-                      (Simulated Customer End OTP: <strong style={{ color: "#16a34a" }}>{activeJob.endOtp}</strong>)
-                    </p>
 
-                    <form
-                      onSubmit={handlePartnerVerifyEndOTP}
-                      style={{ display: "flex", gap: "10px", alignItems: "center" }}
+                    {/* Customer Speech Bubble giving Completion OTP */}
+                    <div
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid #bbf7d0",
+                        borderRadius: "10px",
+                        padding: "10px 14px",
+                        margin: "10px 0 14px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        boxShadow: "0 2px 6px rgba(34, 197, 94, 0.08)",
+                      }}
                     >
-                      <input
-                        type="text"
-                        placeholder="Enter End OTP"
-                        maxLength={4}
-                        value={endOtpInput}
-                        onChange={(e) => setEndOtpInput(e.target.value)}
+                      <div
                         style={{
-                          width: "140px",
-                          padding: "8px",
-                          textAlign: "center",
-                          fontSize: "18px",
-                          fontWeight: 700,
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEndOtpInput(activeJob.endOtp)}
-                        style={{
-                          background: "#e2e8f0",
-                          border: "none",
-                          padding: "8px 12px",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Auto-fill OTP
-                      </button>
-                      <button
-                        type="submit"
-                        style={{
-                          background: "#16a34a",
+                          background: "#3b82f6",
                           color: "#fff",
-                          border: "none",
-                          padding: "9px 16px",
-                          borderRadius: "8px",
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                           fontWeight: 700,
-                          cursor: "pointer",
+                          fontSize: "14px",
+                          shrink: 0,
                         }}
                       >
-                        Verify End OTP & Finalize Order 🎉
-                      </button>
-                    </form>
-                    {endOtpError && (
-                      <p style={{ color: "#dc2626", fontSize: "12px", margin: "6px 0 0 0" }}>
-                        {endOtpError}
-                      </p>
-                    )}
+                        {activeJob.customerName.charAt(0)}
+                      </div>
+                      <div>
+                        <strong style={{ fontSize: "13px", color: "#1e293b" }}>{activeJob.customerName} (Customer):</strong>
+                        <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#15803d" }}>
+                          "Maine kaam check kar liya hai, badhiya kaam kiya aapne. Mera Completion OTP hai <strong style={{ fontSize: "16px", color: "#16a34a", letterSpacing: "2px" }}>{activeJob.endOtp}</strong>"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* PRIMARY BUTTON: WORKER TAKES COMPLETION OTP FROM CUSTOMER */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEndOtpInput(activeJob.endOtp);
+                        setTimeout(() => {
+                          setEndOtpError("");
+                          setShowCompleteModal(true);
+                        }, 400);
+                      }}
+                      style={{
+                        width: "100%",
+                        background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                        color: "#fff",
+                        border: "none",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        fontWeight: 800,
+                        fontSize: "15px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        boxShadow: "0 4px 14px rgba(22, 163, 74, 0.3)",
+                      }}
+                    >
+                      <CheckCircle2 size={20} /> 🤝 Take Completion OTP ({activeJob.endOtp}) from Customer & Close Order 🎉
+                    </button>
                   </div>
                 )}
 

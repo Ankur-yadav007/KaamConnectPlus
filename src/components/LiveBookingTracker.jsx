@@ -69,9 +69,13 @@ export default function LiveBookingTracker({
   // OTP inputs & states
   const [startOtpInput, setStartOtpInput] = useState("");
   const [startOtpError, setStartOtpError] = useState("");
+  const [isWorkerTakingStartOtp, setIsWorkerTakingStartOtp] = useState(false);
+  const [showManualStartInput, setShowManualStartInput] = useState(false);
 
   const [endOtpInput, setEndOtpInput] = useState("");
   const [endOtpError, setEndOtpError] = useState("");
+  const [isWorkerTakingEndOtp, setIsWorkerTakingEndOtp] = useState(false);
+  const [showManualEndInput, setShowManualEndInput] = useState(false);
 
   // Work Duration live timer
   const [workSeconds, setWorkSeconds] = useState(0);
@@ -180,6 +184,17 @@ export default function LiveBookingTracker({
     setEtaMins(0);
   };
 
+  // Worker takes Start OTP from customer and starts work
+  const handleWorkerTakeStartOtp = () => {
+    setIsWorkerTakingStartOtp(true);
+    setStartOtpInput(String(startOtp));
+    setTimeout(() => {
+      setStatus("IN_PROGRESS");
+      setIsWorkerTakingStartOtp(false);
+      setStartOtpError("");
+    }, 800);
+  };
+
   // STEP 1: Verify Start OTP (Worker arrived -> user gives OTP -> worker enters & verifies)
   const handleVerifyStartOTP = (e) => {
     if (e) e.preventDefault();
@@ -208,6 +223,17 @@ export default function LiveBookingTracker({
     setWorkerMessage(msg);
     setShowMessageToast(true);
     setStatus("WORK_COMPLETED_PENDING_OTP");
+  };
+
+  // Worker takes Completion OTP from customer and closes job
+  const handleWorkerTakeEndOtp = () => {
+    setIsWorkerTakingEndOtp(true);
+    setEndOtpInput(String(endOtp));
+    setTimeout(() => {
+      setStatus("COMPLETED");
+      setIsWorkerTakingEndOtp(false);
+      setEndOtpError("");
+    }, 800);
   };
 
   // STEP 3: Verify End OTP (Worker receives OTP from customer and verifies)
@@ -505,7 +531,7 @@ export default function LiveBookingTracker({
                 </div>
               )}
 
-              {/* ================= STEP 1: WORKER ARRIVED - START OTP VERIFICATION ================= */}
+              {/* ================= STEP 1: WORKER ARRIVED - WORKER TAKES OTP FROM USER ================= */}
               {status === "ARRIVED" && (
                 <div
                   className="otp-verification-box"
@@ -546,10 +572,40 @@ export default function LiveBookingTracker({
                           color: "#065f46",
                         }}
                       >
-                        Worker Arrived at Work Location! 📍
+                        {worker.name} Arrived at Your Location! 📍
                       </h4>
                       <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#047857" }}>
-                        Give this <strong>Start OTP</strong> to {worker.name} to verify presence and start work.
+                        Worker has arrived at your doorstep. Please share your <strong>Start OTP</strong> with {worker.name} to begin.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Worker Speech Bubble asking customer for OTP */}
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      border: "1px solid #a7f3d0",
+                      borderRadius: "12px",
+                      padding: "12px 14px",
+                      margin: "12px 0",
+                      textAlign: "left",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "10px",
+                      boxShadow: "0 2px 8px rgba(16, 185, 129, 0.08)",
+                    }}
+                  >
+                    <img
+                      src={worker.photo}
+                      alt={worker.name}
+                      style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover" }}
+                    />
+                    <div>
+                      <strong style={{ fontSize: "13px", color: "#065f46" }}>
+                        💬 {worker.name} (At your doorstep):
+                      </strong>
+                      <p style={{ margin: "3px 0 0 0", fontSize: "13px", color: "#1e293b", fontStyle: "italic" }}>
+                        "Namaste! Main aapke ghar pahuch gaya hu. Kaam shuru karne ke liye kripya apna 4-digit Start OTP bataiye."
                       </p>
                     </div>
                   </div>
@@ -560,129 +616,152 @@ export default function LiveBookingTracker({
                       background: "#ffffff",
                       border: "2px dashed #059669",
                       borderRadius: "12px",
-                      padding: "14px",
+                      padding: "16px",
                       margin: "12px 0",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      textAlign: "center",
                     }}
                   >
-                    <div style={{ textAlign: "left" }}>
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: "#64748b",
-                          textTransform: "uppercase",
-                          letterSpacing: "1px",
-                        }}
-                      >
-                        Your Security Start-Work OTP:
-                      </span>
-                      <div
-                        style={{
-                          fontSize: "30px",
-                          fontWeight: 800,
-                          color: "#059669",
-                          letterSpacing: "6px",
-                          lineHeight: "1.2",
-                        }}
-                      >
-                        {startOtp}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setStartOtpInput(String(startOtp))}
+                    <span
                       style={{
-                        background: "#ecfdf5",
-                        color: "#047857",
-                        border: "1px solid #a7f3d0",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
                         fontSize: "12px",
                         fontWeight: 700,
-                        cursor: "pointer",
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        display: "block",
+                        marginBottom: "4px",
                       }}
-                      title="Quick fill for demo"
                     >
-                      ⚡ Quick Fill
-                    </button>
+                      📱 YOUR START-WORK OTP (GIVE THIS TO {worker.name.toUpperCase()}):
+                    </span>
+                    <div
+                      style={{
+                        fontSize: "36px",
+                        fontWeight: 900,
+                        color: "#059669",
+                        letterSpacing: "8px",
+                        lineHeight: "1.2",
+                        margin: "4px 0",
+                      }}
+                    >
+                      {startOtp}
+                    </div>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#64748b" }}>
+                      Tell this 4-digit code verbally to {worker.name}
+                    </p>
                   </div>
 
-                  {/* Worker Input Verification Section */}
-                  <div
-                    style={{
-                      background: "#f8fafc",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "12px",
-                      padding: "14px",
-                      marginTop: "12px",
-                    }}
-                  >
-                    <p
+                  {/* PRIMARY ACTION: WORKER TAKES OTP FROM USER */}
+                  <div style={{ marginTop: "14px" }}>
+                    <button
+                      type="button"
+                      onClick={handleWorkerTakeStartOtp}
+                      disabled={isWorkerTakingStartOtp}
                       style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#334155",
+                        width: "100%",
+                        background: "linear-gradient(135deg, #059669 0%, #047857 100%)",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "14px 18px",
+                        borderRadius: "12px",
+                        fontWeight: 800,
+                        fontSize: "15px",
+                        cursor: isWorkerTakingStartOtp ? "wait" : "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        boxShadow: "0 6px 18px rgba(5, 150, 105, 0.35)",
+                        transition: "all 0.2s ease",
                       }}
                     >
-                      👷 Worker Verification: Enter customer's OTP to start job
-                    </p>
-                    <form
-                      onSubmit={handleVerifyStartOTP}
-                      style={{ display: "flex", gap: "10px", justifyContent: "center" }}
-                    >
-                      <input
-                        type="text"
-                        className="otp-input"
-                        placeholder="Enter 4-digit OTP"
-                        maxLength={4}
-                        value={startOtpInput}
-                        onChange={(e) => setStartOtpInput(e.target.value)}
-                        style={{
-                          width: "150px",
-                          padding: "10px",
-                          textAlign: "center",
-                          fontSize: "20px",
-                          fontWeight: 800,
-                          borderRadius: "8px",
-                          border: "2px solid #cbd5e1",
-                          outline: "none",
-                        }}
-                      />
+                      {isWorkerTakingStartOtp ? (
+                        <>
+                          <RotateCw size={18} className="spin-slow" />
+                          Worker {worker.name} taking OTP {startOtp} from you & verifying...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck size={20} />
+                          🤝 Give OTP to {worker.name} (Worker Takes & Starts Work) ⚡
+                        </>
+                      )}
+                    </button>
+
+                    {/* Manual Worker Input Simulator link */}
+                    <div style={{ marginTop: "10px", textAlign: "center" }}>
                       <button
-                        type="submit"
-                        className="otp-verify-btn"
+                        type="button"
+                        onClick={() => setShowManualStartInput(!showManualStartInput)}
                         style={{
-                          background: "#059669",
-                          color: "#fff",
+                          background: "none",
                           border: "none",
-                          padding: "10px 20px",
-                          borderRadius: "8px",
-                          fontWeight: 700,
-                          fontSize: "14px",
+                          color: "#047857",
+                          fontSize: "12px",
+                          textDecoration: "underline",
                           cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <ShieldCheck size={18} /> Verify & Start Work ⚡
-                      </button>
-                    </form>
-                    {startOtpError && (
-                      <p
-                        style={{
-                          color: "#dc2626",
-                          fontSize: "13px",
                           fontWeight: 600,
-                          margin: "8px 0 0 0",
                         }}
                       >
-                        {startOtpError}
-                      </p>
+                        {showManualStartInput ? "Hide manual worker device input" : "⚙️ Or manually enter OTP on worker terminal (Testing)"}
+                      </button>
+                    </div>
+
+                    {showManualStartInput && (
+                      <div
+                        style={{
+                          background: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "10px",
+                          padding: "12px",
+                          marginTop: "10px",
+                        }}
+                      >
+                        <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
+                          👷 Worker Mobile Terminal: Enter customer's OTP
+                        </p>
+                        <form
+                          onSubmit={handleVerifyStartOTP}
+                          style={{ display: "flex", gap: "8px", justifyContent: "center" }}
+                        >
+                          <input
+                            type="text"
+                            placeholder="4-digit OTP"
+                            maxLength={4}
+                            value={startOtpInput}
+                            onChange={(e) => setStartOtpInput(e.target.value)}
+                            style={{
+                              width: "120px",
+                              padding: "8px",
+                              textAlign: "center",
+                              fontSize: "18px",
+                              fontWeight: 700,
+                              borderRadius: "6px",
+                              border: "1px solid #cbd5e1",
+                            }}
+                          />
+                          <button
+                            type="submit"
+                            style={{
+                              background: "#059669",
+                              color: "#fff",
+                              border: "none",
+                              padding: "8px 14px",
+                              borderRadius: "6px",
+                              fontWeight: 700,
+                              fontSize: "13px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Verify OTP
+                          </button>
+                        </form>
+                        {startOtpError && (
+                          <p style={{ color: "#dc2626", fontSize: "12px", margin: "6px 0 0 0" }}>
+                            {startOtpError}
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -794,7 +873,7 @@ export default function LiveBookingTracker({
                 </div>
               )}
 
-              {/* ================= STEP 3: WORK COMPLETED - WORKER SENDS MESSAGE & END OTP VERIFICATION ================= */}
+              {/* ================= STEP 3: WORK COMPLETED - WORKER TAKES COMPLETION OTP FROM USER ================= */}
               {status === "WORK_COMPLETED_PENDING_OTP" && (
                 <div
                   style={{
@@ -829,14 +908,14 @@ export default function LiveBookingTracker({
                         src={worker.photo}
                         alt={worker.name}
                         style={{
-                          width: "28px",
-                          height: "28px",
+                          width: "32px",
+                          height: "32px",
                           borderRadius: "50%",
                           objectFit: "cover",
                         }}
                       />
                       <strong style={{ fontSize: "14px", color: "#15803d" }}>
-                        💬 New Message from {worker.name}:
+                        💬 Message from {worker.name}:
                       </strong>
                       <span
                         style={{
@@ -871,133 +950,152 @@ export default function LiveBookingTracker({
                       background: "#ffffff",
                       border: "2px dashed #16a34a",
                       borderRadius: "12px",
-                      padding: "14px",
+                      padding: "16px",
                       marginBottom: "16px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      textAlign: "center",
                     }}
                   >
-                    <div style={{ textAlign: "left" }}>
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          color: "#64748b",
-                          textTransform: "uppercase",
-                          letterSpacing: "1px",
-                        }}
-                      >
-                        CUSTOMER'S COMPLETION OTP:
-                      </span>
-                      <div
-                        style={{
-                          fontSize: "30px",
-                          fontWeight: 800,
-                          color: "#16a34a",
-                          letterSpacing: "6px",
-                          lineHeight: "1.2",
-                        }}
-                      >
-                        {endOtp}
-                      </div>
-                      <small style={{ fontSize: "12px", color: "#15803d" }}>
-                        Share this code with {worker.name} to confirm work is finished.
-                      </small>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEndOtpInput(String(endOtp))}
+                    <span
                       style={{
-                        background: "#dcfce7",
-                        color: "#166534",
-                        border: "1px solid #86efac",
-                        padding: "8px 12px",
-                        borderRadius: "8px",
                         fontSize: "12px",
                         fontWeight: 700,
-                        cursor: "pointer",
+                        color: "#64748b",
+                        textTransform: "uppercase",
+                        letterSpacing: "1px",
+                        display: "block",
+                        marginBottom: "4px",
                       }}
-                      title="Quick fill for demo"
                     >
-                      ⚡ Quick Fill
+                      📱 YOUR COMPLETION OTP (GIVE THIS TO {worker.name.toUpperCase()}):
+                    </span>
+                    <div
+                      style={{
+                        fontSize: "36px",
+                        fontWeight: 900,
+                        color: "#16a34a",
+                        letterSpacing: "8px",
+                        lineHeight: "1.2",
+                        margin: "4px 0",
+                      }}
+                    >
+                      {endOtp}
+                    </div>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#15803d" }}>
+                      Tell this 4-digit code to {worker.name} to confirm work is completed
+                    </p>
+                  </div>
+
+                  {/* PRIMARY ACTION: WORKER TAKES COMPLETION OTP FROM USER */}
+                  <button
+                    type="button"
+                    onClick={handleWorkerTakeEndOtp}
+                    disabled={isWorkerTakingEndOtp}
+                    style={{
+                      width: "100%",
+                      background: "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "14px 18px",
+                      borderRadius: "12px",
+                      fontWeight: 800,
+                      fontSize: "15px",
+                      cursor: isWorkerTakingEndOtp ? "wait" : "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      boxShadow: "0 6px 18px rgba(22, 163, 74, 0.35)",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    {isWorkerTakingEndOtp ? (
+                      <>
+                        <RotateCw size={18} className="spin-slow" />
+                        Worker {worker.name} taking Completion OTP {endOtp} from you & verifying...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={20} />
+                        🤝 Give Completion OTP to {worker.name} (Worker Takes & Closes Job) 🎉
+                      </>
+                    )}
+                  </button>
+
+                  {/* Manual Worker Input Simulator link */}
+                  <div style={{ marginTop: "10px", textAlign: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualEndInput(!showManualEndInput)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#15803d",
+                        fontSize: "12px",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {showManualEndInput ? "Hide manual worker input" : "⚙️ Or manually enter Completion OTP on worker terminal (Testing)"}
                     </button>
                   </div>
 
-                  {/* Worker End OTP Verification Input */}
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "12px",
-                      padding: "14px",
-                    }}
-                  >
-                    <p
+                  {showManualEndInput && (
+                    <div
                       style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#334155",
+                        background: "#ffffff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "10px",
+                        padding: "12px",
+                        marginTop: "10px",
                       }}
                     >
-                      👷 Worker: Enter Completion OTP to officially finish work order
-                    </p>
-                    <form
-                      onSubmit={handleVerifyEndOTP}
-                      style={{ display: "flex", gap: "10px", justifyContent: "center" }}
-                    >
-                      <input
-                        type="text"
-                        className="otp-input"
-                        placeholder="Enter 4-digit OTP"
-                        maxLength={4}
-                        value={endOtpInput}
-                        onChange={(e) => setEndOtpInput(e.target.value)}
-                        style={{
-                          width: "150px",
-                          padding: "10px",
-                          textAlign: "center",
-                          fontSize: "20px",
-                          fontWeight: 800,
-                          borderRadius: "8px",
-                          border: "2px solid #cbd5e1",
-                          outline: "none",
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        className="otp-verify-btn"
-                        style={{
-                          background: "#16a34a",
-                          color: "#fff",
-                          border: "none",
-                          padding: "10px 20px",
-                          borderRadius: "8px",
-                          fontWeight: 700,
-                          fontSize: "14px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                        }}
-                      >
-                        <CheckCircle2 size={18} /> Verify Completion OTP 🎉
-                      </button>
-                    </form>
-                    {endOtpError && (
-                      <p
-                        style={{
-                          color: "#dc2626",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          margin: "8px 0 0 0",
-                        }}
-                      >
-                        {endOtpError}
+                      <p style={{ margin: "0 0 8px 0", fontSize: "12px", color: "#475569", fontWeight: 600 }}>
+                        👷 Worker Mobile Terminal: Enter Completion OTP
                       </p>
-                    )}
-                  </div>
+                      <form
+                        onSubmit={handleVerifyEndOTP}
+                        style={{ display: "flex", gap: "8px", justifyContent: "center" }}
+                      >
+                        <input
+                          type="text"
+                          placeholder="4-digit OTP"
+                          maxLength={4}
+                          value={endOtpInput}
+                          onChange={(e) => setEndOtpInput(e.target.value)}
+                          style={{
+                            width: "120px",
+                            padding: "8px",
+                            textAlign: "center",
+                            fontSize: "18px",
+                            fontWeight: 700,
+                            borderRadius: "6px",
+                            border: "1px solid #cbd5e1",
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          style={{
+                            background: "#16a34a",
+                            color: "#fff",
+                            border: "none",
+                            padding: "8px 14px",
+                            borderRadius: "6px",
+                            fontWeight: 700,
+                            fontSize: "13px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Verify Completion OTP
+                        </button>
+                      </form>
+                      {endOtpError && (
+                        <p style={{ color: "#dc2626", fontSize: "12px", margin: "6px 0 0 0" }}>
+                          {endOtpError}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
